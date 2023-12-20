@@ -1,0 +1,55 @@
+{
+  "name": "openstack-js-sdk",
+  "version": "1.0.0",
+  "description": "A simple OpenStack SDK for JavaScript and TypeScript",
+  "main": "out/lib/converter.js",
+  "bin": {
+    "openstack-js-sdk": "out/index.js"
+  },
+  "files": [
+    "out/"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.[tj]s\"",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GridexX/openstack-js-sdk"
+  },
+  "keywords": [
+    "openstack",
+    "sdk",
+    "javascript",
+    "typescript",
+    "cloud"
+  ],
+  "author": {
+    "name": "Arsène Fougerouse",
+    "email": "arsene582@gmail.com",
+    "url": "https://github.com/GridexX"
+  },
+  "homepage": "https://github.com/GridexX",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "prettier": "^3.1.1",
+    "ts-node": "^10.9.2",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.22.4"
+  }
+}
