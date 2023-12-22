@@ -107,7 +107,7 @@ export const versionResponse = z.object({
   versions: z.array(
     z.object({
       id: z.string(),
-      status: z.enum(['CURRENT', 'SUPPORTED', 'DEPRECATED']),
+      status: z.enum(['CURRENT', 'EXPERIMENTAL', 'SUPPORTED', 'DEPRECATED']),
       links: z.array(
         z.object({
           rel: z.string(),

@@ -20,7 +20,7 @@ export interface OpenStackClient {
   generateToken(): Promise<void>;
 }
 
-type ServiceName = 'compute' | 'image';
+type ServiceName = 'compute' | 'image' | 'rating';
 
 // Define a type for URLs
 type Urls = Record<ServiceName, string | undefined>;
@@ -28,7 +28,7 @@ type Urls = Record<ServiceName, string | undefined>;
 export class OpenStackClient implements OpenStackClient {
   readonly config?: CloudConfig;
   #token?: string;
-  #publicUrls: Urls = { compute: undefined, image: undefined };
+  #publicUrls: Urls = { compute: undefined, image: undefined, rating: undefined };
 
   isConnected(): boolean {
     return typeof this.#token !== 'undefined';
