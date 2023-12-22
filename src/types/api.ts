@@ -117,3 +117,62 @@ export const versionResponse = z.object({
     }),
   ),
 });
+
+export const metricAllResponse = z.object({
+  id: z.string(),
+  creator: z.string(),
+  name: z.string(),
+  unit: z.string(),
+  resource_id: z.string(),
+  archive_policy: z.object({
+    name: z.string(),
+    back_window: z.number(),
+    definition: z.array(
+      z.object({
+        timespan: z.string(),
+        granularity: z.string(),
+        points: z.number(),
+      }),
+    ),
+    aggregation_methods: z.array(z.string()),
+  }),
+  created_by_user_id: z.string(),
+  created_by_project_id: z.string(),
+});
+
+export const metricResponse = metricAllResponse
+  .omit({
+    resource_id: true,
+  })
+  .extend({
+    resource: z.object({
+      creator: z.string(),
+      started_at: z.string(),
+      revision_start: z.string(),
+      ended_at: z.string(),
+      user_id: z.string(),
+      project_id: z.string(),
+      original_resource_id: z.string(),
+      id: z.string(),
+      type: z.string(),
+      revision_end: z.string().optional().or(z.null()),
+      created_by_user_id: z.string(),
+      created_by_project_id: z.string(),
+    }),
+  });
+
+export type MetricResponse = z.infer<typeof metricResponse>;
+
+export const metricsResponse = z.array(metricAllResponse);
+
+export type MetricsResponse = z.infer<typeof metricsResponse>;
+
+export const metricMeasureResponse = z.array(
+  z.tuple([
+    z.string().datetime({ offset: true }), // Date-time string
+    z.number(), // Granularity
+    z.number(), // Value
+  ]),
+);
+
+export type MetricMeasureResponse = z.infer<typeof metricMeasureResponse>;

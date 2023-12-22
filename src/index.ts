@@ -19,7 +19,7 @@ const main = async () => {
       console.log(JSON.stringify(ser));
     }
   });
-  client?.getImages().then((im) => {
+  client?.getMetricMeasure('00306677-de10-47de-8190-b18f39e02474').then((im) => {
     console.log(JSON.stringify(im));
   });
 };

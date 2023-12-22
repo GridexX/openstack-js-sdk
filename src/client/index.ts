@@ -6,9 +6,15 @@ import {
   AuthBody,
   AuthResponse,
   ImagesResponse,
+  MetricMeasureResponse,
+  MetricResponse,
+  MetricsResponse,
   ServerResponse,
   ServersResponse,
   imagesResponse,
+  metricMeasureResponse,
+  metricResponse,
+  metricsResponse,
   serverResponse,
   serversResponse,
   versionResponse,
@@ -20,7 +26,7 @@ export interface OpenStackClient {
   generateToken(): Promise<void>;
 }
 
-type ServiceName = 'compute' | 'image' | 'rating';
+type ServiceName = 'compute' | 'image' | 'rating' | 'metric';
 
 // Define a type for URLs
 type Urls = Record<ServiceName, string | undefined>;
@@ -28,7 +34,7 @@ type Urls = Record<ServiceName, string | undefined>;
 export class OpenStackClient implements OpenStackClient {
   readonly config?: CloudConfig;
   #token?: string;
-  #publicUrls: Urls = { compute: undefined, image: undefined, rating: undefined };
+  #publicUrls: Urls = { compute: undefined, image: undefined, rating: undefined, metric: undefined };
 
   isConnected(): boolean {
     return typeof this.#token !== 'undefined';
@@ -157,7 +163,6 @@ export class OpenStackClient implements OpenStackClient {
               versions.find((version) => version.status === 'CURRENT')?.links.find((l) => l.rel === 'self')?.href ??
               undefined;
             if (href) {
-              console.log(`${serviceName} ${url} ${href}`);
               this.#publicUrls[serviceName as ServiceName] = removeTrailingSlash(href);
             }
           } else {
@@ -223,6 +228,53 @@ export class OpenStackClient implements OpenStackClient {
       url: `${this.#publicUrls.image}/images`,
       requestSchema: z.void(),
       responseSchema: imagesResponse,
+    })();
+  }
+
+  async getMetrics(queryParams?: { limit: number; start: number }): Promise<MetricsResponse | undefined> {
+    const urlObject = new URL(`${this.#publicUrls.metric}/metric`);
+    if (queryParams) {
+      urlObject.searchParams.set('start', `${queryParams.start}`);
+      urlObject.searchParams.set('limit', `${queryParams.limit}`);
+    }
+    const url = urlObject.toString();
+    return await api({
+      method: 'GET',
+      token: this.#token,
+      url,
+      requestSchema: z.void(),
+      responseSchema: metricsResponse,
+    })();
+  }
+
+  async getMetric(metricId: string): Promise<MetricResponse | undefined> {
+    return await api({
+      method: 'GET',
+      token: this.#token,
+      url: `${this.#publicUrls.metric}/metric/${metricId}`,
+      requestSchema: z.void(),
+      responseSchema: metricResponse,
+    })();
+  }
+
+  // See the documentation: https://gnocchi.osci.io/rest.html#filter
+  async getMetricMeasure(
+    metricId: string,
+    queryParams?: { granularity: number; resample: number; aggregation: string },
+  ): Promise<MetricMeasureResponse | undefined> {
+    const urlObject = new URL(`${this.#publicUrls.metric}/metric/${metricId}/measures`);
+    if (queryParams) {
+      urlObject.searchParams.set('granularity', `${queryParams.granularity}`);
+      urlObject.searchParams.set('resample', `${queryParams.resample}`);
+      urlObject.searchParams.set('aggregation', `${queryParams.aggregation}`);
+    }
+    const url = urlObject.toString();
+    return await api({
+      method: 'GET',
+      token: this.#token,
+      url,
+      requestSchema: z.void(),
+      responseSchema: metricMeasureResponse,
     })();
   }
 }
