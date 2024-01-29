@@ -18,11 +18,13 @@ export default function api<Request, Response>({
   method: HTTPMethod;
   url: string;
   token?: string;
-  requestSchema: z.ZodType<Request>;
+  requestSchema?: z.ZodType<Request>;
   responseSchema: z.ZodType<Response>;
 }): (data: Request) => Promise<Response> {
   return function (requestData: Request) {
-    requestSchema.parse(requestData);
+    if (requestSchema) {
+      requestSchema.parse(requestData);
+    }
 
     async function apiCall() {
       const response = await axios({

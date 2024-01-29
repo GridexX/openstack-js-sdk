@@ -176,3 +176,82 @@ export const metricMeasureResponse = z.array(
 );
 
 export type MetricMeasureResponse = z.infer<typeof metricMeasureResponse>;
+
+export const limitResponse = z.object({
+  limits: z.object({
+    rate: z.array(z.any()),
+    absolute: z.object({
+      maxTotalInstances: z.number(),
+      maxTotalCores: z.number(),
+      maxTotalRAMSize: z.number(),
+      maxServerMeta: z.number(),
+      maxImageMeta: z.number(),
+      maxPersonality: z.number(),
+      maxPersonalitySize: z.number(),
+      maxTotalKeypairs: z.number(),
+      maxServerGroups: z.number(),
+      maxServerGroupMembers: z.number(),
+      maxTotalFloatingIps: z.number(),
+      maxSecurityGroups: z.number(),
+      maxSecurityGroupRules: z.number(),
+      totalRAMUsed: z.number(),
+      totalCoresUsed: z.number(),
+      totalInstancesUsed: z.number(),
+      totalFloatingIpsUsed: z.number(),
+      totalSecurityGroupsUsed: z.number(),
+      totalServerGroupsUsed: z.number(),
+    }),
+  }),
+});
+
+export type LimitResponse = z.infer<typeof limitResponse>;
+
+export const tenantUsageRequest = z.object({
+  detailed: z.number().min(0).max(1).optional(),
+  start: z.string().datetime({ offset: true }).optional(),
+  end: z.string().datetime({ offset: true }).optional(),
+  limit: z.number().positive().max(100).optional(),
+  marker: z.string().optional(),
+});
+
+export type TenantUsageRequest = z.infer<typeof tenantUsageRequest>;
+
+export const tenantUsageResponse = z.object({
+  tenant_usages: z.array(
+    z.object({
+      start: z.string().datetime({ offset: true }),
+      stop: z.string().datetime({ offset: true }),
+      tenant_id: z.string(),
+      total_hours: z.number(),
+      total_local_gb_usage: z.number(),
+      total_memory_mb_usage: z.number(),
+      total_vcpus_usage: z.number(),
+      server_usages: z
+        .array(
+          z.object({
+            ended_at: z.string().datetime().or(z.null()),
+            flavor: z.string(),
+            hours: z.number(),
+            instance_id: z.string(),
+            local_gb: z.number(),
+            memory_mb: z.number(),
+            name: z.string(),
+            started_at: z.string(),
+            state: z.string(),
+            tenant_id: z.string(),
+            uptime: z.number(),
+            vcpus: z.number(),
+          }),
+        )
+        .optional(),
+    }),
+  ),
+  tenant_usages_links: z.array(
+    z.object({
+      href: z.string().url(),
+      rel: z.string(),
+    }),
+  ),
+});
+
+export type TenantUsageResponse = z.infer<typeof tenantUsageResponse>;

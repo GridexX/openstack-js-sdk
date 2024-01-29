@@ -6,17 +6,23 @@ import {
   AuthBody,
   AuthResponse,
   ImagesResponse,
+  LimitResponse,
   MetricMeasureResponse,
   MetricResponse,
   MetricsResponse,
   ServerResponse,
   ServersResponse,
+  TenantUsageRequest,
+  TenantUsageResponse,
   imagesResponse,
+  limitResponse,
   metricMeasureResponse,
   metricResponse,
   metricsResponse,
   serverResponse,
   serversResponse,
+  tenantUsageRequest,
+  tenantUsageResponse,
   versionResponse,
 } from '../types/api';
 import api, { removeTrailingSlash } from './generic';
@@ -276,5 +282,26 @@ export class OpenStackClient implements OpenStackClient {
       requestSchema: z.void(),
       responseSchema: metricMeasureResponse,
     })();
+  }
+
+  async getLimits(): Promise<LimitResponse> {
+    return await api({
+      method: 'GET',
+      token: this.#token,
+      url: `${this.#publicUrls.compute}/limits`,
+      requestSchema: z.void(),
+      responseSchema: limitResponse,
+    })();
+  }
+
+  // https://docs.openstack.org/api-ref/compute/#list-tenant-usage-statistics-for-all-tenants
+  async getTenantUsage(requestSchema: TenantUsageRequest): Promise<TenantUsageResponse> {
+    return await api({
+      method: 'GET',
+      token: this.#token,
+      url: `${this.#publicUrls.compute}/os-simple-tenant-usage`,
+      requestSchema: tenantUsageRequest,
+      responseSchema: tenantUsageResponse
+    })(requestSchema)
   }
 }
