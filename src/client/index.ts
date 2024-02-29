@@ -27,6 +27,7 @@ import {
 } from '../types/api';
 import api, { removeTrailingSlash } from './generic';
 import { z } from 'zod';
+import { Logger, pino } from 'pino';
 
 export interface OpenStackClient {
   generateToken(): Promise<void>;
@@ -39,6 +40,7 @@ type Urls = Record<ServiceName, string | undefined>;
 
 export class OpenStackClient implements OpenStackClient {
   readonly config?: CloudConfig;
+  #logger: Logger<never>;
   #token?: string;
   #publicUrls: Urls = { compute: undefined, image: undefined, rating: undefined, metric: undefined };
 
@@ -47,6 +49,8 @@ export class OpenStackClient implements OpenStackClient {
   }
 
   constructor(filePath: string, cloudName: string) {
+    this.#logger = pino({ mixin: () => ({ context: 'OpenStackClient' }) });
+
     try {
       // Read the content of the clouds.yaml file
       const configFile = readFileSync(filePath, 'utf8');
@@ -105,16 +109,16 @@ export class OpenStackClient implements OpenStackClient {
             };
             break;
           default:
-            console.error(`Unsupported auth_type: ${authType}`);
+            this.#logger.error(`Unsupported auth_type: ${authType}`);
         }
       } else {
-        console.error(`Cloud configuration '${cloudName}' not found or missing auth_type.`);
+        this.#logger.error(`Cloud configuration '${cloudName}' not found or missing auth_type.`);
       }
     } catch (error) {
-      console.error('Error reading or parsing clouds.yaml:', JSON.stringify(error));
+      this.#logger.error('Error reading or parsing clouds.yaml:', JSON.stringify(error));
     }
     if (this.config) {
-      console.log('Configuration succefully loaded');
+      this.#logger.info({ context: 'OpenStackClient' }, 'Configuration succefully loaded');
     }
   }
 
@@ -144,7 +148,7 @@ export class OpenStackClient implements OpenStackClient {
       const token: string | undefined = response.headers['x-subject-token'];
 
       if (response.status === 201 && token) {
-        console.log('Token succesfully generated !');
+        this.#logger.info('Token succesfully generated !');
         this.#token = token;
 
         // Find the Public associated type in the request and add it to the
@@ -177,12 +181,13 @@ export class OpenStackClient implements OpenStackClient {
         });
 
         await Promise.all(promises);
-        console.log(`public URLS: ${JSON.stringify(this.#publicUrls)}`);
+        this.#logger.info({ public_urls: this.#publicUrls });
+        // this.#logger.info(`public URLS: ${JSON.stringify(this.#publicUrls)}`);
       } else {
-        console.error('Error generating token:', response.data);
+        this.#logger.error('Error generating token:', response.data);
       }
     } catch (error) {
-      console.error('Error generating token:', error);
+      this.#logger.error('Error generating token:', error);
     }
   }
 
@@ -192,11 +197,11 @@ export class OpenStackClient implements OpenStackClient {
    */
   async getServers(): Promise<ServersResponse | undefined> {
     if (!this.#publicUrls.compute) {
-      console.error('No public compute url set');
+      this.#logger.error('No public compute url set');
       return undefined;
     }
     if (!this.#token) {
-      console.error('No token set');
+      this.#logger.error('No token set');
       return undefined;
     }
     return await api({
@@ -210,11 +215,11 @@ export class OpenStackClient implements OpenStackClient {
 
   async getServer(id: string): Promise<ServerResponse | undefined> {
     if (!this.#publicUrls.compute) {
-      console.error('No public compute url set');
+      this.#logger.error('No public compute url set');
       return undefined;
     }
     if (!this.#token) {
-      console.error('No token set');
+      this.#logger.error('No token set');
       return undefined;
     }
     return await api({
@@ -227,7 +232,7 @@ export class OpenStackClient implements OpenStackClient {
   }
 
   async getImages(): Promise<ImagesResponse | undefined> {
-    console.log(this.#publicUrls.image);
+    this.#logger.info(this.#publicUrls.image);
     return await api({
       method: 'GET',
       token: this.#token,
@@ -301,7 +306,22 @@ export class OpenStackClient implements OpenStackClient {
       token: this.#token,
       url: `${this.#publicUrls.compute}/os-simple-tenant-usage`,
       requestSchema: tenantUsageRequest,
-      responseSchema: tenantUsageResponse
-    })(requestSchema)
+      responseSchema: tenantUsageResponse,
+    })(requestSchema);
   }
+}
+
+/**
+ * Read clouds.yaml file and extract fields based on auth_type.
+ * @param {string} filePath - Path to the clouds.yaml file.
+ * @param {string} cloudName - Name of the cloud configuration to extract.
+ * @returns {OpenStackClient} - The OpenStackClient
+ */
+export async function createClient(filePath: string, cloudName: string): Promise<OpenStackClient | null> {
+  const client = new OpenStackClient(filePath, cloudName);
+  await client.generateToken();
+  if (!client.isConnected()) {
+    return null;
+  }
+  return client;
 }

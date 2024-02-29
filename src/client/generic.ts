@@ -8,6 +8,13 @@ export const httpMethod = {
 
 export type HTTPMethod = (typeof httpMethod)[keyof typeof httpMethod];
 
+// *
+// * @param method The HTTP method to use
+// * @param url The URL to call
+// * @param token The token used for the authentication
+// * @param requestSchema The schema to validate the Request type (see Zod)
+// * @param responseSchema The schema to validate the Response (see Zod)
+// * @returns data: The data received by the API, validated by the responseSchema.
 export default function api<Request, Response>({
   method,
   url,
@@ -39,6 +46,7 @@ export default function api<Request, Response>({
         },
       });
 
+      // Use Zod to validate the response
       responseSchema.safeParseAsync(response.data).then((result) => {
         if (!result.success) {
           console.error(`Wrong data received: ${JSON.stringify(response.data)}, error: ${result.error}`);

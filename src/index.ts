@@ -1,27 +1,61 @@
-import { OpenStackClient } from './client';
+import { createClient } from './client';
 
-/**
- * Read clouds.yaml file and extract fields based on auth_type.
- * @param {string} filePath - Path to the clouds.yaml file.
- * @param {string} cloudName - Name of the cloud configuration to extract.
- * @returns {null} - The OpenStackClient
- */
-export async function createClient(filePath: string, cloudName: string): Promise<OpenStackClient | null> {
-  const client = new OpenStackClient(filePath, cloudName);
-  await client.generateToken();
-  return client;
-}
+import express, { Express, Request, Response } from 'express';
+import cors from 'cors';
+import pinoHttp from 'pino-http';
+import router from './server/routes';
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
-const main = async () => {
-  const client = await createClient('/home/gridexx/Documents/Mezo/openstack-js-sdk/clouds.yaml', 'openstack');
-  client?.getServer('e29b3957-f8c2-46d2-9397-2eb266adfb5c').then((ser) => {
-    {
-      console.log(JSON.stringify(ser));
-    }
-  });
-  client?.getLimits().then((im) => {
-    console.log(JSON.stringify(im));
-  });
+const app: Express = express();
+const pino = pinoHttp();
+
+const openstackConfigPath = process.env.OS_CLOUDS_FILE ?? '';
+const openstackCloud = process.env.OS_CLOUD ?? '';
+const port = process.env.PORT ?? 3000;
+const { logger } = pino;
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'OpenStack API',
+      version: '1.0.0',
+      description: 'A simple API to interact with OpenStack',
+    },
+    servers: [
+      {
+        url: `http://localhost:${port}`,
+      },
+    ],
+  },
+  apis: ['./src/server/routes.ts'],
 };
 
-main();
+const swaggerSpec = swaggerJSDoc(options);
+
+app.use(cors({ origin: true }));
+app.use(express.json());
+app.use(pino);
+app.use(router);
+
+const main = async (app: Express) => {
+  const client = await createClient(openstackConfigPath, openstackCloud);
+  if (!client) {
+    logger.error('[server] Could not create the OpenStack client');
+    process.exit(1);
+  }
+  app.locals.openStackClient = client;
+};
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.get('/', (req: Request, res: Response) => {
+  res.send('Welcome to the OpenStack API');
+});
+
+app.listen(port, () => {
+  logger.info(`[server] Server is running at http://localhost:${port}`);
+});
+
+main(app);

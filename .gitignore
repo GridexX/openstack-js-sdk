@@ -2,3 +2,4 @@ out/
 node_modules/
 clouds.yaml
 clouds.yml
+.envrc
