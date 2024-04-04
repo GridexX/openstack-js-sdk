@@ -348,13 +348,19 @@ router.get('/servers', (req, res) => {
  *                 $ref: '#/components/schemas/Server'
  */
 router.get('/servers/:id', (req, res) => {
-  req.app.locals.openStackClient.getServer(req.params.id).then((response: ServerResponse | undefined) => {
-    if (!response) {
-      res.status(500).send('Internal Server Error');
-      return;
-    }
-    res.json(response);
-  });
+  req.app.locals.openStackClient
+    .getServer(req.params.id)
+    .then((response: ServerResponse | undefined) => {
+      if (!response) {
+        res.status(404).send('Server not found');
+        return;
+      }
+      res.json(response);
+    })
+    .catch((error: any) => {
+      console.error(error);
+      res.status(500).send('Server not found');
+    });
 });
 
 /**
@@ -446,7 +452,7 @@ router.get('/metrics/:id/measure', (req, res) => {
   let { granularity: granularityS, resample: resampleS, aggregationS } = req.query;
   const granularity = isNaN(parseInt(granularityS as string)) ? 100 : parseInt(granularityS as string);
   const resample = isNaN(parseInt(resampleS as string)) ? 0 : parseInt(resampleS as string);
-  const aggregation = aggregationS as string;
+  const aggregation = !aggregationS ? 'mean' : (aggregationS as string);
   const queryParams = { granularity, resample, aggregation };
   req.app.locals.openStackClient
     .getMetricMeasure(req.params.id, queryParams)
@@ -509,11 +515,16 @@ router.get(
         marker: req?.query?.marker,
       };
 
-      req.app.locals.openStackClient.getTenantUsage(requestSchema).then((response: TenantUsageResponse) => {
-        res.json(response);
-      });
+      req.app.locals.openStackClient
+        .getTenantUsage(requestSchema)
+        .then((response: TenantUsageResponse) => {
+          res.json(response);
+        })
+        .catch((error: any) => {
+          console.error(error);
+          res.status(500).send('Tenants not found');
+        });
     }
-    res.send(result.array());
   },
 );
 

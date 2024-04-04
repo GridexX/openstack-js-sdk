@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { P } from 'pino';
 import { z } from 'zod';
 
 export const httpMethod = {
@@ -34,26 +35,32 @@ export default function api<Request, Response>({
     }
 
     async function apiCall() {
-      const response = await axios({
-        method,
-        url,
-        headers: { 'X-Auth-Token': token },
-        [method === httpMethod.GET ? 'params' : 'data']: requestData,
+      try {
+        const response = await axios({
+          method,
+          url,
+          headers: { 'X-Auth-Token': token },
+          [method === httpMethod.GET ? 'params' : 'data']: requestData,
 
-        // Validate the status to not reject the 300 HTTP code received from the API versions call
-        validateStatus: function (status) {
-          return status <= 300; // Reject only if the status code is greater than 300
-        },
-      });
+          // Validate the status to not reject the 300 HTTP code received from the API versions call
+          validateStatus: function (status) {
+            return status <= 300; // Reject only if the status code is greater than 300
+          },
+        });
 
-      // Use Zod to validate the response
-      responseSchema.safeParseAsync(response.data).then((result) => {
-        if (!result.success) {
-          console.error(`Wrong data received: ${JSON.stringify(response.data)}, error: ${result.error}`);
-        }
-      });
+        // Use Zod to validate the response
+        responseSchema.safeParseAsync(response.data).then((result) => {
+          if (!result.success) {
+            console.error(`Wrong data received: ${JSON.stringify(response.data)}, error: ${result.error}`);
+          }
+        });
 
-      return response.data as Response;
+        return response.data as Response;
+      } catch (error) {
+        console.error(`Error calling ${method} ${url}: ${error}`);
+        return Promise.reject(error);
+        throw error;
+      }
     }
 
     return apiCall();

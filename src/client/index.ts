@@ -222,13 +222,19 @@ export class OpenStackClient implements OpenStackClient {
       this.#logger.error('No token set');
       return undefined;
     }
-    return await api({
+    const response = api({
       method: 'GET',
       token: this.#token,
       url: `${this.#publicUrls.compute}/servers/${id}`,
       requestSchema: z.void(),
       responseSchema: serverResponse,
     })();
+
+    if (!response) {
+      throw new Error('Server not found');
+    }
+
+    return response;
   }
 
   async getImages(): Promise<ImagesResponse | undefined> {
@@ -275,9 +281,9 @@ export class OpenStackClient implements OpenStackClient {
   ): Promise<MetricMeasureResponse | undefined> {
     const urlObject = new URL(`${this.#publicUrls.metric}/metric/${metricId}/measures`);
     if (queryParams) {
-      urlObject.searchParams.set('granularity', `${queryParams.granularity}`);
-      urlObject.searchParams.set('resample', `${queryParams.resample}`);
-      urlObject.searchParams.set('aggregation', `${queryParams.aggregation}`);
+      // urlObject.searchParams.set('granularity', `${queryParams.granularity}`);
+      // urlObject.searchParams.set('resample', `${queryParams.resample}`);
+      // urlObject.searchParams.set('aggregation', `${queryParams.aggregation}`);
     }
     const url = urlObject.toString();
     return await api({
