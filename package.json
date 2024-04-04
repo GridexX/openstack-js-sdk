@@ -10,7 +10,7 @@
     "out/"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "hurl --test tests/**",
     "dev:start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "start": "ts-node src/index.ts",
     "build": "tsc",
@@ -41,6 +41,7 @@
   "homepage": "https://github.com/GridexX",
   "license": "MIT",
   "devDependencies": {
+    "@orangeopensource/hurl": "^4.2.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/express-validator": "^3.0.0",
