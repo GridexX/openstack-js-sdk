@@ -1,0 +1,24 @@
+services:
+  api:
+    image: gridexx/openstack-js-sdk:latest
+    container_name: openstack-js-sdk
+    volumes:
+      - $PWD/clouds.yaml:/app/clouds.yaml
+    ports:
+      - "3000:3000"
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
+
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 --label-enable --cleanup 
+    environment:
+      - WATCHTOWER_HTTP_API_TOKEN
+    ports:
+      - 8080:8080
+    restart: unless-stopped
