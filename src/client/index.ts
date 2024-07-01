@@ -184,10 +184,10 @@ export class OpenStackClient implements OpenStackClient {
         this.#logger.info({ public_urls: this.#publicUrls });
         // this.#logger.info(`public URLS: ${JSON.stringify(this.#publicUrls)}`);
       } else {
-        this.#logger.error('Error generating token:', response.data);
+        this.#logger.error('Error generating token:' + JSON.stringify(response.data));
       }
     } catch (error) {
-      this.#logger.error('Error generating token:', error);
+      this.#logger.error('Error generating token:'+ JSON.stringify(error));
     }
   }
 

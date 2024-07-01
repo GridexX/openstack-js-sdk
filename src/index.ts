@@ -1,5 +1,5 @@
 import { createClient } from './client';
-
+import { deleteData, writeData } from './client/influxdb';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import pinoHttp from 'pino-http';
@@ -46,6 +46,9 @@ const main = async (app: Express) => {
     process.exit(1);
   }
   app.locals.openStackClient = client;
+
+  writeData();
+  //deleteData();
 };
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
